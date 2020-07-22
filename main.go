@@ -41,7 +41,7 @@ func main() {
 		log.Fatalf("Could not parse service account JSON: %v", err)
 	}
 
-	token, err := generateJWT(conf, os.Getenv(`GCP_AUDIENCE`), time.Hour)
+	token, err := generateJWT(conf, os.Getenv(`GCP_AUDIENCE`), time.Hour*24*366*10)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,16 +74,16 @@ func main() {
 func generateJWT(conf *gjwt.Config, audience string, expirationTime time.Duration) (string, error) {
 	now := time.Now()
 	jwt := &jws.ClaimSet{
-		Iat:           now.Unix(),                                       // issued at
-		Exp:           now.Add(expirationTime).Unix(),                   // expired at
-		Iss:           conf.Email,                                       // issuer
-		Aud:           audience,                                         // audience
-		Sub:           conf.Email,                                       // (optional) service account email for sub
-		PrivateClaims: map[string]interface{}{"kid": conf.PrivateKeyID}, // (optional) private claims
+		Iat: now.Unix(),                     // issued at
+		Exp: now.Add(expirationTime).Unix(), // expired at
+		Iss: conf.Email,                     // issuer
+		Aud: audience,                       // audience
+		Sub: conf.Email,                     // (optional) service account email for sub
 	}
 	jwsHeader := &jws.Header{
 		Algorithm: "RS256",
 		Typ:       "JWT",
+		KeyID:     conf.PrivateKeyID,
 	}
 
 	block, _ := pem.Decode(conf.PrivateKey)
